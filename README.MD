@@ -1,15 +1,4 @@
 
-
-### ✅ Problème :  
-Sur GitHub, il faut faire attention aux :
-- **Espaces entre titres et contenu**
-- **Retour à la ligne bien placés**
-- **Pas de `#` collés ou mal indentés**
-
----
-
-### ✅ Solution : Voici le `README.md` bien formaté, CUTE et CLEAN 🪞
-
 ```markdown
 # 🌙 NOCTÆ Discord Bot
 
