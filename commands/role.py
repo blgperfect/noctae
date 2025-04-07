@@ -63,6 +63,16 @@ NSFW_ROLES = {
     "✦ Kinks open": 1358633616929980646,
     "✦ BDSM curious": 1358633718675280043,
 }
+STYLE_ROLES = {
+    "༄Color roles ༄": 1358634334537515179,
+    "𓈒𖥔˚｡˖ LANGUES / LANGUAGES ˖ ࣪⭑": 1358623033044107534,
+    "𓈒𖥔˚｡˖ verification ˖ ࣪⭑": 1358623257250500830,
+    "⭑ VIBES ⭑": 1358623858168561784,
+    "𓈒𖥔˚｡˖ DM STATUS˖ ࣪⭑": 1358626742029385829,
+    "𓈒𖥔˚｡˖ About/Apropos ˖ ࣪⭑": 1358629508466479105,
+    "⨳PING⨳": 1358631456452116651,
+    "⟡NSFW ROLES ⟡": 1358632212697972980,
+}
 
 # === CLASSES DE BOUTONS ===
 
@@ -132,6 +142,12 @@ class MultiRoleView(View):
         for name, role_id in role_dict.items():
             self.add_item(MultiRoleButton(name, role_id))
 
+class StyleRolesView(View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        for name, role_id in STYLE_ROLES.items():
+            self.add_item(MultiRoleButton(name, role_id))
+
 # === VUE PRINCIPALE ===
 
 class MainRoleView(View):
@@ -161,6 +177,10 @@ class MainRoleView(View):
     @discord.ui.button(label="⟡ NSFW Roles ⟡", style=discord.ButtonStyle.danger)
     async def nsfw_roles(self, interaction: discord.Interaction, button: Button):
         await interaction.response.send_message("🔞 NSFW...", view=MultiRoleView(NSFW_ROLES), ephemeral=True)
+
+    @discord.ui.button(label="⟡ Just for Style ⟡", style=discord.ButtonStyle.secondary)
+    async def just_style(self, interaction: discord.Interaction, button: Button):
+        await interaction.response.send_message("🌸 Just for looks...", view=StyleRolesView(), ephemeral=True)
 
 # === COG PRINCIPAL AVEC LA STRUCTURE REQUISE ===
 
