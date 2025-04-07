@@ -1,5 +1,15 @@
 
 
+### ✅ Problème :  
+Sur GitHub, il faut faire attention aux :
+- **Espaces entre titres et contenu**
+- **Retour à la ligne bien placés**
+- **Pas de `#` collés ou mal indentés**
+
+---
+
+### ✅ Solution : Voici le `README.md` bien formaté, CUTE et CLEAN 🪞
+
 ```markdown
 # 🌙 NOCTÆ Discord Bot
 
@@ -11,22 +21,26 @@ A soft and aesthetic Discord bot for welcome, language roles, and rules with but
 
 ---
 
-## 🛠️ Installation
+## 🛠️ Installation / Setup
 
 ### 🇫🇷 Étapes d’installation
+
 1. Clonez ce repo :
+
 ```bash
 git clone https://github.com/blgperfect/noctae.git
 cd noctae
 ```
 
 2. (Optionnel) Créez un environnement virtuel :
+
 ```bash
 python -m venv venv
-source venv/bin/activate  # ou .\venv\Scripts\activate pour Windows
+source venv/bin/activate  # ou .\venv\Scripts\activate sous Windows
 ```
 
 3. Installez les dépendances :
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -34,19 +48,23 @@ pip install -r requirements.txt
 ---
 
 ### 🇬🇧 Installation Steps
+
 1. Clone this repository:
+
 ```bash
 git clone https://github.com/blgperfect/noctae.git
 cd noctae
 ```
 
 2. (Optional) Create a virtual environment:
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # or .\venv\Scripts\activate on Windows
 ```
 
 3. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -55,51 +73,57 @@ pip install -r requirements.txt
 
 ## 🔐 Configuration : `.env`
 
-### 🇫🇷 Exemple de `.env` :
+### 🇫🇷 Exemple de `.env`
+
 ```env
 DISCORD_TOKEN=        # Ton token Discord
-MONGO_URI=            # (optionnel) URI MongoDB si tu l’utilises
-DATABASE_NAME=        # (optionnel) Nom de ta base de données
+MONGO_URI=            # (optionnel) URI MongoDB si utilisée
+DATABASE_NAME=        # (optionnel) Nom de la base de données
 ```
 
-### 🇬🇧 `.env` example:
+### 🇬🇧 `.env` Example
+
 ```env
 DISCORD_TOKEN=        # Your Discord bot token
-MONGO_URI=            # (optional) MongoDB URI if you're using it
+MONGO_URI=            # (optional) MongoDB URI if used
 DATABASE_NAME=        # (optional) Your database name
 ```
 
-⚠️ **Ne partage jamais ce fichier / Never share this file!** Il contient des infos sensibles.
+⚠️ **Ne publie jamais ton fichier `.env` ! / Never commit your `.env` file!**
 
 ---
 
 ## ⚙️ Personnalisation / Customization
 
-### 🇫🇷 Tu peux facilement modifier :
-- Les **ID de rôles, salons, catégories** dans les fichiers Python.
-- Les **textes, couleurs, images, embeds, règles**.
-- Les **permissions** des commandes (`admin_only`, etc).
+### 🇫🇷 Personnalisation possible :
 
-### 🇬🇧 You can easily customize:
-- **Role IDs, channel IDs, category IDs** inside Python files.
-- All **texts, colors, images, embeds, and rules**.
-- **Permissions** for commands (e.g., admin-only).
+- Modifier les ID de rôles, salons, catégories
+- Modifier les messages, couleurs, embeds
+- Modifier les permissions (`admin_only`, etc.)
 
-📌 **Pense à remplacer tous les ID d'exemple (13586...) par les tiens.**  
-📌 **Make sure to replace all placeholder IDs (13586...) with your actual ones.**
+### 🇬🇧 You can easily:
+
+- Change role/channel/category IDs
+- Edit messages, colors, embeds
+- Customize permissions (admin only, etc.)
+
+📌 Remplace tous les IDs d'exemple (`13586...`) avec les tiens.  
+📌 Replace all example IDs (`13586...`) with your own.
 
 ---
 
-## 🚀 Lancement / Run
+## 🚀 Lancement / Running the bot
 
-### 🇫🇷 Pour lancer le bot :
+### 🇫🇷 Lancer le bot :
+
 ```bash
-python main.py
+python bot.py
 ```
 
-### 🇬🇧 To run the bot:
+### 🇬🇧 Run the bot:
+
 ```bash
-python main.py
+python bot.py
 ```
 ```
 
