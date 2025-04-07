@@ -92,7 +92,6 @@ class ExclusiveButton(Button):
             msg = f"✅ **{selected.name}** attribué !\n✅ **{selected.name}** given!"
 
         await interaction.response.send_message(msg, ephemeral=True)
-        await interaction.followup.send("✔️", ephemeral=True)
 
 class MultiRoleButton(Button):
     def __init__(self, label, role_id):
@@ -111,7 +110,6 @@ class MultiRoleButton(Button):
             msg = f"✅ **{role.name}** attribué !\n✅ **{role.name}** given!"
 
         await interaction.response.send_message(msg, ephemeral=True)
-        await interaction.followup.send("✔️", ephemeral=True)
 
 # === VUES DE RÔLES ===
 
