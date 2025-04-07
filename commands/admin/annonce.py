@@ -1,3 +1,5 @@
+# Tu peux choisir cette fonctionnalité ou encore celle dans task/autoannonce.py ou les deux!
+# You can choose this one or the one in task/autoannonce.py or both!
 import discord
 from discord.ext import commands
 from discord import app_commands
