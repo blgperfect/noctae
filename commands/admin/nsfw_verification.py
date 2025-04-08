@@ -108,7 +108,6 @@ class JailVerifyView(View):
             timestamp=datetime.utcnow()
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
-
 # === COG Principal
 class NSFWCommand(commands.Cog):
     def __init__(self, bot):
@@ -157,9 +156,19 @@ class NSFWCommand(commands.Cog):
                         await message.channel.send(f"Erreur : {e}", delete_after=10)
                 else:
                     try:
+                        # 🔒 Sauvegarde des rôles actuels (hors @everyone)
+                        old_roles = [role.id for role in message.author.roles if role != guild.default_role]
+                        await db.user_roles.update_one(
+                            {"_id": message.author.id},
+                            {"$set": {"roles": old_roles}},
+                            upsert=True
+                        )
+
+                        # 🔒 Attribution du rôle jail
                         jail = guild.get_role(ROLE_JAIL)
                         await message.author.edit(roles=[jail])
-                        verify_chan = guild.get_channel(CHANNEL_VERIFY_ID)
+
+                        # 🔔 Embed + ping dans salon de vérif
                         embed = discord.Embed(
                             title="VÉRIFICATION NSFW / NSFW VERIFICATION",
                             description=(
@@ -169,8 +178,9 @@ class NSFWCommand(commands.Cog):
                             color=discord.Color.from_str("#C9B6D9"),
                             timestamp=datetime.utcnow()
                         )
+                        verify_chan = guild.get_channel(CHANNEL_VERIFY_ID)
                         await verify_chan.send(
-                            content=f"{message.author.mention}",
+                            content=f"{message.author.mention} <@&{ROLE_NOTIFICATION}>",
                             embed=embed,
                             view=JailVerifyView(user_id=message.author.id)
                         )
@@ -185,6 +195,13 @@ class NSFWCommand(commands.Cog):
                 if any(r.id == ROLE_JAIL for r in message.author.roles):
                     cat = guild.get_channel(TEMP_CAT_ID)
                     temp = await guild.create_text_channel(f"jail-{message.author.name}", category=cat)
+                    embed = discord.Embed(
+                        title="Espace privé créé / Private Room Created",
+                        description="Un membre de l'équipe va te vérifier sous peu.\nAn admin will verify you shortly.",
+                        color=discord.Color.from_str("#C9B6D9"),
+                        timestamp=datetime.utcnow()
+                    )
+                    await temp.send(content=f"{message.author.mention} <@&{ROLE_NOTIFICATION}>", embed=embed)
                     await message.channel.send(
                         f"{message.author.mention} → Salon privé créé : {temp.mention}",
                         delete_after=10
@@ -200,13 +217,28 @@ class NSFWCommand(commands.Cog):
             await ctx.send("❌ Utilise cette commande dans un salon `jail-...`.", delete_after=10)
             return
         try:
-            await member.add_roles(
+            # 🔁 Récupération des anciens rôles depuis MongoDB
+            data = await db.user_roles.find_one({"_id": member.id})
+            if data and "roles" in data:
+                previous_roles = [
+                    ctx.guild.get_role(rid)
+                    for rid in data["roles"]
+                    if rid != ROLE_JAIL and ctx.guild.get_role(rid)
+                ]
+            else:
+                previous_roles = []
+
+            # ✅ Ajout des rôles NSFW + restaurés
+            await member.edit(roles=previous_roles + [
                 ctx.guild.get_role(ROLE_PLUS18),
                 ctx.guild.get_role(ROLE_ZONE_ROUGE),
                 ctx.guild.get_role(ROLE_VERIFIED)
-            )
+            ])
+
+            # 🔄 Suppression du rôle jail
             await member.remove_roles(ctx.guild.get_role(ROLE_JAIL))
 
+            # 📢 Message embed dans salon général de vérif
             embed = discord.Embed(
                 title="Nouvelle vérification Jail / New Jail Verification",
                 description="Les admins seront avec toi sous peu.\nAdmins will be with you shortly.",
@@ -214,10 +246,15 @@ class NSFWCommand(commands.Cog):
                 timestamp=datetime.utcnow()
             )
             await ctx.guild.get_channel(CHANNEL_VERIFY_ID).send(
-                content=f"{member.mention} <@{ROLE_NOTIFICATION}>", embed=embed
+                content=f"{member.mention} <@&{ROLE_NOTIFICATION}>", embed=embed
             )
+
             await ctx.send(f"{member.mention} a été vérifié ✅", delete_after=10)
             await ctx.channel.delete()
+
+            # 🧹 Nettoyage MongoDB
+            await db.user_roles.delete_one({"_id": member.id})
+
         except Exception as e:
             await ctx.send(f"❌ Erreur : {e}", delete_after=15)
 
