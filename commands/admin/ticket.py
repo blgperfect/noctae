@@ -2,10 +2,11 @@ import os
 import discord
 from discord.ext import commands
 from discord import app_commands
-from discord.ui import View, Button, Select
+from discord.ui import View, Select
 from datetime import datetime
 from dotenv import load_dotenv
 import motor.motor_asyncio
+import io
 
 # === ENV + Mongo
 load_dotenv()
@@ -29,6 +30,7 @@ TICKET_LOGS = 1359275755539796138
 URGENT_ROLE_ID = 1358619011470065804
 ALLOWED_ROLES_FR = [1358619683984511006, 1358619857922556034]
 ALLOWED_ROLES_EN = [1358619777140133949, 1358619857922556034]
+
 class TicketView(View):
     def __init__(self, lang: str):
         super().__init__(timeout=None)
@@ -43,8 +45,12 @@ class TicketTypeSelect(Select):
             discord.SelectOption(label="Urgence", value="urgence"),
             discord.SelectOption(label="Partenariat", value="partenariat"),
         ]
-        super().__init__(placeholder="Sélectionne une raison..." if lang == "fr" else "Choose a reason...",
-                         min_values=1, max_values=1, options=options)
+        super().__init__(
+            placeholder="Sélectionne une raison..." if lang == "fr" else "Choose a reason...",
+            min_values=1, max_values=1,
+            options=options,
+            custom_id=f"ticket:type:{lang}"
+        )
         self.lang = lang
 
     async def callback(self, interaction: discord.Interaction):
@@ -59,17 +65,21 @@ class ApplicationSelect(Select):
             discord.SelectOption(label="Surveillant", value="surveillant"),
             discord.SelectOption(label="Partner Manager", value="partner_manager"),
         ]
-        super().__init__(placeholder="Postuler en tant que..." if lang == "fr" else "Apply for role...",
-                         min_values=1, max_values=1, options=options)
+        super().__init__(
+            placeholder="Postuler en tant que..." if lang == "fr" else "Apply for role...",
+            min_values=1, max_values=1,
+            options=options,
+            custom_id=f"ticket:apply:{lang}"
+        )
         self.lang = lang
 
     async def callback(self, interaction: discord.Interaction):
         await create_ticket(interaction, self.values[0], self.lang)
+
 async def create_ticket(interaction: discord.Interaction, reason: str, lang: str):
     guild = interaction.guild
     user = interaction.user
 
-    # Vérifie les rôles autorisés
     allowed_roles = ALLOWED_ROLES_FR if lang == "fr" else ALLOWED_ROLES_EN
     if not any(role.id in allowed_roles for role in user.roles):
         await interaction.response.send_message(
@@ -78,7 +88,6 @@ async def create_ticket(interaction: discord.Interaction, reason: str, lang: str
         )
         return
 
-    # Anti double ticket
     existing = await tickets_col.find_one({"user_id": user.id, "status": "open"})
     if existing:
         await interaction.response.send_message(
@@ -87,7 +96,6 @@ async def create_ticket(interaction: discord.Interaction, reason: str, lang: str
         )
         return
 
-    # Création du salon
     category = guild.get_channel(TICKET_CATS[lang])
     overwrites = {
         guild.default_role: discord.PermissionOverwrite(view_channel=False),
@@ -101,7 +109,6 @@ async def create_ticket(interaction: discord.Interaction, reason: str, lang: str
     ticket_name = f"ticket-{user.name}".lower()
     channel = await guild.create_text_channel(ticket_name, category=category, overwrites=overwrites)
 
-    # Enregistrement en base
     await tickets_col.insert_one({
         "_id": channel.id,
         "user_id": user.id,
@@ -111,13 +118,9 @@ async def create_ticket(interaction: discord.Interaction, reason: str, lang: str
         "created_at": datetime.utcnow()
     })
 
-    # Message d’accueil dans le ticket
     await channel.send(content=f"{user.mention}")
     await channel.send(embed=generate_ticket_embed(reason, lang, user))
-
-    await interaction.response.send_message(
-        f"✅ Ticket ouvert : {channel.mention}", ephemeral=True
-    )
+    await interaction.response.send_message(f"✅ Ticket ouvert : {channel.mention}", ephemeral=True)
 
 def generate_ticket_embed(reason: str, lang: str, user: discord.Member):
     embed = discord.Embed(color=discord.Color.blurple(), timestamp=datetime.utcnow())
@@ -141,23 +144,22 @@ def generate_ticket_embed(reason: str, lang: str, user: discord.Member):
             "en": "Please share your experience, schedule, and what you can bring to the server."
         }
     }
-
     default_app_msg = {
         "fr": "Merci de nous donner ton expérience, ton horaire et ce que tu peux apporter.",
         "en": "Please share your experience, schedule, and what you can bring to the server."
     }
-
-    # Type de ticket
     text = messages.get(reason, default_app_msg)[lang]
     title = f"🎫 Ticket - {reason.title()}"
     embed.title = title
     embed.description = text
     return embed
-import io
-
 class TicketSystem(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    async def cog_load(self):
+        self.bot.add_view(TicketView("fr"))
+        self.bot.add_view(TicketView("en"))
 
     # === Afficher le menu ticket
     @commands.command(name="ticketpanel")
@@ -178,7 +180,6 @@ class TicketSystem(commands.Cog):
         )
         await ctx.send(embed=embed, view=TicketView(lang))
 
-
     # === Claim le ticket
     @commands.command(name="claim")
     @commands.has_permissions(manage_messages=True)
@@ -197,7 +198,6 @@ class TicketSystem(commands.Cog):
             "en": f"{ctx.author.mention} claimed this ticket, they will help you now."
         }
         await ctx.send(f"{user.mention}\n{msg[lang]}")
-
         await tickets_col.update_one({"_id": ctx.channel.id}, {"$set": {"claimed_by": ctx.author.id}})
 
     # === Fermer le ticket
@@ -208,7 +208,6 @@ class TicketSystem(commands.Cog):
         if not data:
             return await ctx.send("❌ Ce salon n’est pas un ticket actif.")
 
-        # Transcript
         messages = []
         async for msg in ctx.channel.history(limit=None, oldest_first=True):
             timestamp = msg.created_at.strftime('%Y-%m-%d %H:%M')
@@ -216,25 +215,20 @@ class TicketSystem(commands.Cog):
 
         transcript = "\n".join(messages)
         transcript_file = discord.File(io.StringIO(transcript), filename=f"transcript-{ctx.channel.name}.txt")
-
         log_channel = ctx.guild.get_channel(TICKET_LOGS)
-        await log_channel.send(
-            f"📁 Ticket fermé : {ctx.channel.name}",
-            file=transcript_file
-        )
+        await log_channel.send(f"📁 Ticket fermé : {ctx.channel.name}", file=transcript_file)
 
         await tickets_col.update_one({"_id": ctx.channel.id}, {"$set": {"status": "closed", "closed_at": datetime.utcnow()}})
         await ctx.send("Fermeture du ticket...")
-
         await ctx.channel.delete()
 
-    # === Auto fermeture si user quitte
+    # === Auto fermeture si utilisateur quitte
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         open_ticket = await tickets_col.find_one({"user_id": member.id, "status": "open"})
         if not open_ticket:
             return
-        guild = self.bot.get_guild(member.guild.id)
+        guild = member.guild
         channel = guild.get_channel(open_ticket["_id"])
         if channel:
             try:
@@ -244,12 +238,8 @@ class TicketSystem(commands.Cog):
                     messages.append(f"[{timestamp}] {msg.author.name}: {msg.content}")
                 transcript = "\n".join(messages)
                 transcript_file = discord.File(io.StringIO(transcript), filename=f"transcript-{channel.name}.txt")
-
                 log_channel = guild.get_channel(TICKET_LOGS)
-                await log_channel.send(
-                    f"📁 Ticket auto-fermé (départ utilisateur) : {channel.name}",
-                    file=transcript_file
-                )
+                await log_channel.send(f"📁 Ticket auto-fermé (départ utilisateur) : {channel.name}", file=transcript_file)
             except:
                 pass
             await tickets_col.update_one({"_id": channel.id}, {"$set": {"status": "closed", "closed_at": datetime.utcnow()}})
