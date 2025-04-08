@@ -180,7 +180,7 @@ class NSFWCommand(commands.Cog):
                         )
                         verify_chan = guild.get_channel(CHANNEL_VERIFY_ID)
                         await verify_chan.send(
-                            content=f"{message.author.mention} <@&{ROLE_NOTIFICATION}>",
+                            content=f"{message.author.mention}",
                             embed=embed,
                             view=JailVerifyView(user_id=message.author.id)
                         )
