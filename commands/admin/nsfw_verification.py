@@ -257,7 +257,7 @@ class NSFWCommand(commands.Cog):
 
         except Exception as e:
             await ctx.send(f"❌ Erreur : {e}", delete_after=15)
-
+ 
 # === Setup
 async def setup(bot):
     await bot.add_cog(NSFWCommand(bot))
