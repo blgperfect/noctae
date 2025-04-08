@@ -1,4 +1,3 @@
-# task/boost_thanks.py
 import discord
 from discord.ext import commands
 from datetime import datetime
@@ -14,7 +13,6 @@ class BoostAutoTask(commands.Cog, name="BoostAutoTask"):
 
     @commands.Cog.listener()
     async def on_member_update(self, before: discord.Member, after: discord.Member):
-        print(f"[DEBUG] Vérif boost pour {after.display_name}")
         if before.premium_since != after.premium_since and after.premium_since is not None:
             print(f"[✅] {after.display_name} a boosté !")
             await self.send_boost_message(after)
