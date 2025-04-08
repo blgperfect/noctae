@@ -10,20 +10,20 @@ from discord.ui import View, Button
 from dotenv import load_dotenv
 import motor.motor_asyncio
 
-# === Configuration locale FR
+# === Locale FR
 try:
     locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
 except Exception:
     pass
 
-# === ENV & Mongo
+# === ENV + Mongo
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
 DATABASE_NAME = os.getenv("DATABASE_NAME")
 client_mongo = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI)
 db = client_mongo[DATABASE_NAME]
 
-# === CONSTANTES (à adapter à ton serveur)
+# === IDs (à adapter)
 ROLE_PLUS18       = 1358622354321965248
 ROLE_ZONE_ROUGE   = 1358622493019082943
 ROLE_JAIL         = 1358930694776295667
@@ -34,7 +34,7 @@ CHANNEL_RULES_ID  = 1358611957015646288
 CHANNEL_VERIFY_ID = 1358929674696392965
 TEMP_CAT_ID       = 1358933384390508744
 
-# === VUE BOUTONS DE LANGUE
+# === Vue des règles (boutons langue)
 class NSFWRulesView(View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -44,20 +44,15 @@ class NSFWRulesView(View):
         embed = discord.Embed(
             title="𓈒𖥔˚｡˖ 𝐕𝐄𝐑𝐈𝐅𝐈𝐂𝐀𝐓𝐈𝐎𝐍 𝐍𝐒𝐅𝐖 ˖ ࣪⭑",
             description=(
-                "Bienvenue dans l’espace de vérification NSFW de NOCTÆ.\n"
-                "Pour accéder aux salons NSFW, merci de lire attentivement ce qui suit.\n\n"
+                "Bienvenue dans l’espace de vérification NSFW de NOCTÆ.\n\n"
                 "୨୧ ‧₊✧ 𝐂𝐨𝐧𝐝𝐢𝐭𝐢𝐨𝐧𝐬 :\n"
                 "・Tu dois avoir **18 ans ou plus**.\n"
                 "・Aucune fausse déclaration ne sera tolérée.\n"
-                "・L'équipe se réserve le droit de refuser l'accès en cas de doute.\n"
-                "・Ton âge ne sera pas affiché publiquement.\n\n"
+                "・L'équipe peut refuser l'accès si doute.\n"
+                "・Ton âge reste privé.\n\n"
                 "✧ ˚₊ 𝐐𝐮𝐞 𝐟𝐚𝐮𝐭-𝐢𝐥 𝐟𝐚𝐢𝐫𝐞 ?\n"
-                "▸ Envoie simplement ton âge ici (exemple : `18`)\n\n"
-                "⤷ Un membre du staff t’attribuera le rôle `+18` s’il valide ta demande.\n"
-                "⤷ Ensuite, tu auras accès à l’espace NSFW.\n\n"
-                "✧ ˚₊ 𝐀𝐯𝐞𝐫𝐭𝐢𝐬𝐬𝐞𝐦𝐞𝐧𝐭 :\n"
-                "Le non-respect des règles NSFW entraînera une exclusion immédiate.\n"
-                "Le **respect, le consentement et la confidentialité** sont obligatoires."
+                "▸ Envoie juste ton âge (ex: `18`)\n"
+                "⤷ Le staff t’attribuera l’accès NSFW."
             ),
             color=discord.Color.from_str("#C9B6D9"),
             timestamp=datetime.utcnow()
@@ -69,58 +64,62 @@ class NSFWRulesView(View):
         embed = discord.Embed(
             title="𓈒𖥔˚｡˖ NSFW 𝐕𝐄𝐑𝐈𝐅𝐈𝐂𝐀𝐓𝐈𝐎𝐍 ˖ ࣪⭑",
             description=(
-                "Welcome to NOCTÆ's NSFW verification space.\n"
-                "To access the NSFW channels, please read carefully.\n\n"
-                "୨୧ ‧₊✧ 𝐂𝐨𝐧𝐝𝐢𝐭𝐢𝐨𝐧𝐬 :\n"
-                "・You must be **18 years old or older**.\n"
-                "・Any false declaration will result in an immediate ban.\n"
-                "・Staff reserves the right to deny access if there is any doubt.\n"
-                "・Your age will not be displayed publicly.\n\n"
-                "✧ ˚₊ 𝐖𝐡𝐚𝐭 𝐬𝐡𝐨𝐮𝐥𝐝 𝐲𝐨𝐮 𝐝𝐨 ?\n"
-                "▸ Just send your age here (example: `18`)\n\n"
-                "⤷ A staff member will assign you the `+18` role once approved.\n"
-                "⤷ Then you’ll gain access to the NSFW space.\n\n"
-                "✧ ˚₊ 𝐖𝐚𝐫𝐧𝐢𝐧𝐠 :\n"
-                "**Respect, consent, and confidentiality** are strictly required."
+                "Welcome to NOCTÆ's NSFW verification space.\n\n"
+                "୨୧ ‧₊✧ Conditions:\n"
+                "・You must be **18 or older**.\n"
+                "・No false claims allowed.\n"
+                "・Staff may deny access if unsure.\n"
+                "・Your age stays private.\n\n"
+                "✧ ˚₊ What to do?\n"
+                "▸ Just type your age (e.g., `18`)\n"
+                "⤷ Staff will give NSFW access."
             ),
             color=discord.Color.from_str("#C9B6D9"),
             timestamp=datetime.utcnow()
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-# === VUE POUR BOUTON DE VÉRIFICATION
+# === Vue vérification (mineur)
 class JailVerifyView(View):
-    def __init__(self):
+    def __init__(self, user_id: int):
         super().__init__(timeout=None)
+        self.user_id = user_id
 
     @discord.ui.button(label="Vérifier / Verify", style=discord.ButtonStyle.success, custom_id="jail:verify")
     async def verify_btn(self, interaction: discord.Interaction, button: Button):
+        if interaction.user.id != self.user_id:
+            await interaction.response.send_message("❌ Ce bouton n'est pas pour toi.", ephemeral=True)
+            return
+
         embed = discord.Embed(
             title="Voici comment te vérifier / How to Verify",
             description=(
-                "**FR :** Prends une photo nette de toi avec une feuille contenant la date, le nom du serveur (NOCTÆ) et ton pseudo.\n"
-                "En cas de doute, une photo de ta carte d'identité pourra être demandée (visage + date de naissance visibles uniquement).\n\n"
-                "**EN :** Take a clear photo of yourself holding a paper with today's date, server name (NOCTÆ), and your username.\n"
-                "If suspicious, we may ask for your ID (only birthdate and face visible).\n\n"
-                "→ Ensuite, tape `verify` dans ce salon."
+                "**FR :** Prends une photo nette avec :\n"
+                "• Ton visage visible\n"
+                "• Une feuille avec la **date**, le **serveur** et ton **pseudo**\n"
+                "→ Si doute, une photo d'ID peut être demandée.\n\n"
+                "**EN :** Take a clear photo showing:\n"
+                "• Your face\n"
+                "• A paper with **today’s date**, **server name**, and **username**\n"
+                "→ If suspicious, we may ask for ID.\n\n"
+                "**Tape `verify` dans ce salon** pour créer ton espace."
             ),
             color=discord.Color.from_str("#C9B6D9"),
             timestamp=datetime.utcnow()
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
-# === COG PRINCIPAL
+# === COG Principal
 class NSFWCommand(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot):
         self.bot = bot
 
-    # Slash & Prefix Command pour envoyer règles
     @commands.command(name="nsfwrules")
     @commands.has_permissions(administrator=True)
     async def nsfw_prefix(self, ctx):
         await ctx.send(embed=self.get_lang_embed(), view=NSFWRulesView())
 
-    @app_commands.command(name="nsfwrules", description="Afficher les règles NSFW avec choix de langue.")
+    @app_commands.command(name="nsfwrules", description="Afficher les règles NSFW")
     @app_commands.checks.has_permissions(administrator=True)
     async def nsfw_slash(self, interaction: discord.Interaction):
         await interaction.response.send_message(embed=self.get_lang_embed(), view=NSFWRulesView())
@@ -139,36 +138,44 @@ class NSFWCommand(commands.Cog):
             return
 
         content = message.content.strip()
+        guild = message.guild
+
         if message.channel.id == CHANNEL_RULES_ID:
             if content.isdigit():
                 age = int(content)
-                guild = message.guild
                 if age >= 18:
                     try:
                         await message.author.add_roles(
                             guild.get_role(ROLE_PLUS18),
                             guild.get_role(ROLE_ZONE_ROUGE)
                         )
-                        await message.channel.send(f"{message.author.mention} → **Vérification réussie ! Accès NSFW accordé.**")
+                        await message.channel.send(
+                            f"{message.author.mention} → **Vérification réussie !** ✅",
+                            delete_after=10
+                        )
                     except Exception as e:
-                        await message.channel.send(f"Erreur lors de l'attribution des rôles : {e}")
+                        await message.channel.send(f"Erreur : {e}", delete_after=10)
                 else:
                     try:
-                        await message.author.edit(roles=[guild.get_role(ROLE_JAIL)])
+                        jail = guild.get_role(ROLE_JAIL)
+                        await message.author.edit(roles=[jail])
                         verify_chan = guild.get_channel(CHANNEL_VERIFY_ID)
                         embed = discord.Embed(
                             title="VÉRIFICATION NSFW / NSFW VERIFICATION",
                             description=(
-                                f"**FR :** Tu as indiqué avoir moins de 18 ans.\n"
-                                f"**EN :** You stated you're under 18."
+                                f"**FR :** Salut {message.author.mention}, tu as moins de 18 ans.\n"
+                                f"**EN :** Hi {message.author.mention}, you are under 18."
                             ),
                             color=discord.Color.from_str("#C9B6D9"),
                             timestamp=datetime.utcnow()
                         )
-                        await verify_chan.send(content=f"{message.author.mention} <@{ROLE_NOTIFICATION}>", embed=embed)
-                        await message.channel.send("Merci d’appuyer sur le bouton ci-dessous pour voir comment te vérifier.", view=JailVerifyView())
+                        await verify_chan.send(
+                            content=f"{message.author.mention}",
+                            embed=embed,
+                            view=JailVerifyView(user_id=message.author.id)
+                        )
                     except Exception as e:
-                        await message.channel.send(f"Erreur lors de la mise en Jail : {e}")
+                        await message.channel.send(f"Erreur jail : {e}", delete_after=10)
                 await message.delete()
             else:
                 await message.delete()
@@ -176,18 +183,21 @@ class NSFWCommand(commands.Cog):
         elif message.channel.id == CHANNEL_VERIFY_ID:
             if content.lower() == "verify":
                 if any(r.id == ROLE_JAIL for r in message.author.roles):
-                    temp_cat = message.guild.get_channel(TEMP_CAT_ID)
-                    temp = await message.guild.create_text_channel(f"jail-{message.author.name}", category=temp_cat)
-                    await message.channel.send(f"{message.author.mention} → Salon temporaire créé : {temp.mention}")
+                    cat = guild.get_channel(TEMP_CAT_ID)
+                    temp = await guild.create_text_channel(f"jail-{message.author.name}", category=cat)
+                    await message.channel.send(
+                        f"{message.author.mention} → Salon privé créé : {temp.mention}",
+                        delete_after=10
+                    )
                 await message.delete()
             else:
                 await message.delete()
 
     @commands.command(name="verify")
     @commands.has_permissions(administrator=True)
-    async def admin_verify(self, ctx, member: discord.Member):
+    async def verify_user(self, ctx, member: discord.Member):
         if not ctx.channel.name.startswith("jail-"):
-            await ctx.send("❌ Utilise cette commande dans un salon `jail-`.")
+            await ctx.send("❌ Utilise cette commande dans un salon `jail-...`.", delete_after=10)
             return
         try:
             await member.add_roles(
@@ -195,21 +205,22 @@ class NSFWCommand(commands.Cog):
                 ctx.guild.get_role(ROLE_ZONE_ROUGE),
                 ctx.guild.get_role(ROLE_VERIFIED)
             )
-            if ROLE_JAIL in [r.id for r in member.roles]:
-                await member.remove_roles(ctx.guild.get_role(ROLE_JAIL))
-            notif_embed = discord.Embed(
+            await member.remove_roles(ctx.guild.get_role(ROLE_JAIL))
+
+            embed = discord.Embed(
                 title="Nouvelle vérification Jail / New Jail Verification",
                 description="Les admins seront avec toi sous peu.\nAdmins will be with you shortly.",
                 color=discord.Color.from_str("#C9B6D9"),
                 timestamp=datetime.utcnow()
             )
             await ctx.guild.get_channel(CHANNEL_VERIFY_ID).send(
-                content=f"{member.mention} <@{ROLE_NOTIFICATION}>", embed=notif_embed
+                content=f"{member.mention} <@{ROLE_NOTIFICATION}>", embed=embed
             )
+            await ctx.send(f"{member.mention} a été vérifié ✅", delete_after=10)
             await ctx.channel.delete()
         except Exception as e:
-            await ctx.send(f"Erreur : {e}")
+            await ctx.send(f"❌ Erreur : {e}", delete_after=15)
 
-# Setup du COG
+# === Setup
 async def setup(bot):
     await bot.add_cog(NSFWCommand(bot))
