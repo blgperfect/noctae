@@ -2,7 +2,6 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-from discord.ui import View
 from datetime import datetime
 
 LOG_CHANNEL_ID = 1358606855307268176  # Salon de logs
@@ -35,12 +34,24 @@ class Moderation(commands.Cog):
     async def ban_slash(self, interaction: discord.Interaction, member: discord.Member, reason: str = "Aucune raison / No reason provided"):
         await self.process_ban(interaction, member, reason)
 
-    # === Fonction kick
+    # === Fonction KICK
     async def process_kick(self, context, member: discord.Member, reason: str):
         author = context.user if isinstance(context, discord.Interaction) else context.author
         guild = context.guild
 
-        # DM message
+        # 🔒 Protection hiérarchie
+        if member.top_role >= author.top_role:
+            msg = (
+                "❌ Tu ne peux pas expulser ce membre, son rôle est égal ou supérieur au tien.\n"
+                "You can't kick this member — their role is equal or higher than yours."
+            )
+            if isinstance(context, discord.Interaction):
+                await context.response.send_message(msg, ephemeral=True)
+            else:
+                await context.send(msg, delete_after=10)
+            return
+
+        # ✉️ DM bilingue
         try:
             await member.send(
                 f"**Bonjour {member.name},**\n"
@@ -74,12 +85,24 @@ class Moderation(commands.Cog):
         else:
             await context.send(f"{member.mention} a été expulsé ✅")
 
-    # === Fonction ban
+    # === Fonction BAN
     async def process_ban(self, context, member: discord.Member, reason: str):
         author = context.user if isinstance(context, discord.Interaction) else context.author
         guild = context.guild
 
-        # DM message
+        # 🔒 Protection hiérarchie
+        if member.top_role >= author.top_role:
+            msg = (
+                "❌ Tu ne peux pas bannir ce membre, son rôle est égal ou supérieur au tien.\n"
+                "You can't ban this member — their role is equal or higher than yours."
+            )
+            if isinstance(context, discord.Interaction):
+                await context.response.send_message(msg, ephemeral=True)
+            else:
+                await context.send(msg, delete_after=10)
+            return
+
+        # ✉️ DM bilingue
         try:
             await member.send(
                 f"**Bonjour {member.name},**\n"
